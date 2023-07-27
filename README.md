@@ -1,7 +1,7 @@
 # Module 14 Plotly Challenge: Belly Button Biodiversity Dashboard
 
 ## Background
-In this assignment, you will build an interactive dashboard to explore the Belly Button Biodiversity datasetLinks to an external site., which catalogs the microbes that colonize human navels. The dataset reveals that a small handful of microbial species (also called operational taxonomic units, or OTUs, in the study) were present in more than 70% of people, while the rest were relatively rare. Use console.log inside of your JavaScript code to see what your data looks like at each step. Refer to the Plotly.js documentationLinks to an external site. when building the plots.
+In this assignment, you will build an interactive dashboard to explore the Belly Button Biodiversity datasset which can be found here: http://robdunnlab.com/projects/belly-button-biodiversity/results-and-data/ which catalogs the microbes that colonize human navels. The dataset reveals that a small handful of microbial species (also called operational taxonomic units, or OTUs, in the study) were present in more than 70% of people, while the rest were relatively rare. Use console.log inside of your JavaScript code to see what your data looks like at each step. Refer to the Plotly.js documentationLinks to an external site. when building the plots.
 
 ## Before You Begin
 Inside your local git repository, copy the files from in the StarterCode folder contained within the Module 14 Challenge zip file. i.e. index.html, samples.json, and the static folder. NOTE: You will not be required to access the samples.json file locally, but it is provided for reference.
