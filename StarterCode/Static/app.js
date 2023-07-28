@@ -1,162 +1,156 @@
-//function to populate a select menu w/ the sample names
-function sampleNamesSelect() {
-  const selDataset = document.querySelector('#selDataset');
-  const url = '/names';
-  Plotly.d3.json(url, (error, response) => {
-    if (error) return console.warn(error);
-    response.map(sample => {
-      let option = document.createElement('option')
-      option.text = sample;
-      option.value = sample;
-      selDataset.appendChild(option);
+// This code was largely inspired by Dom's HW14 Tutorial
+console.log('This is app.js');
+
+// Define a global variable to hold the URL
+const url = 'https://2u-data-curriculum-team.s3.amazonaws.com/dataviz-classroom/v1.1/14-Interactive-Web-Visualizations/02-Homework/samples.json'
+
+function DrawBargraph(sampleId) {
+    console.log(`DrawBargraph(${sampleId})`);
+
+    d3.json(url).then(data => {
+        console.log(data);
+
+        let samples = data.samples;
+        let resultArray = samples.filter(s => s.id == sampleId);
+        let result = resultArray[0];
+
+        let otu_ids = result.otu_ids;
+        let otu_labels = result.otu_labels;
+        let sample_values = result.sample_values;
+
+        let yticks = otu_ids.slice(0,10).map(otuId => `OTU ${otuId}`).reverse();
+
+        // Create a trace object
+        let barData = {
+            x: sample_values.slice(0,10).reverse(),
+            y: yticks,
+            type: 'bar',
+            text: otu_labels.slice(0,10).reverse(),
+            orientation: 'h'
+        };
+
+        // Put the trace object into an array
+        let barArray = [barData];
+
+        // Create a layout object
+        let barLayout = {
+            title: "Top 10 - Bacteria Cultures Found",
+            margin: {t: 30, l: 150}
+        };
+
+        // Call the Plotly function
+        Plotly.newPlot('bar', barArray, barLayout);
+    })
+}
+
+function DrawBubblechart(sampleId) {
+    console.log(`DrawBubblechart(${sampleId})`);
+
+    d3.json(url).then(data => {
+        let samples = data.samples;
+        let resultArray = samples.filter(s => s.id == sampleId);
+        let result = resultArray[0];
+
+        let otu_ids = result.otu_ids;
+        let otu_labels = result.otu_labels;
+        let sample_values = result.sample_values;
+
+        // Create a trace
+        let bubbleData = {
+            x: otu_ids,
+            y: sample_values,
+            text: otu_labels,
+            mode: 'markers',
+            marker: {
+                size: sample_values,
+                color: otu_ids,
+                colorscale: 'Earth'
+            }
+        }
+
+        // Put the trace into an array
+        let bubbleArray = [bubbleData];
+
+        // Create a layout object
+        let bubbleLayout = {
+            title: 'Bacteria Cultures Per Sample',
+            margin: {t: 30},
+            hovermode: 'closest',
+            xaxis: {title: "OTU ID"},
+        };
+
+        // Call Plotly funtion
+        Plotly.newPlot('bubble', bubbleArray, bubbleLayout);
+    })
+}
+
+
+function ShowMetadata(sampleId) {
+    console.log(`ShowMetadata(${sampleId})`);
+
+    d3.json(url).then((data) => {
+        let metadata = data.metadata;
+        console.log(metadata);
+
+        // Filter data
+        let result = metadata.filter(meta => meta.id == sampleId)[0];
+        let demographicInfo = d3.select('#sample-metadata');
+
+        // Clear existing data in demographicInfo
+        demographicInfo.html('');
+
+        // Add key and value pair to the demographicInfo panel
+        Object.entries(result).forEach(([key, value]) => {
+            demographicInfo.append('h6').text(`${key}: ${value}`);
+        });
     });
-  });
 }
 
-//function to handle when a new sample is selected
-function optionChanged(sample) {
-  showMetadata(sample);
-  showPie(sample);
-  showBubble(sample);
+function optionChanged(sampleId) {
+    console.log(`optionChanged, new value: ${sampleId}`);
+
+    DrawBargraph(sampleId);
+    DrawBubblechart(sampleId);
+    DrawGauge(sampleId);
+    ShowMetadata(sampleId);
 }
 
-//get the otu descriptions
-function otuDescriptions(idList) {
-  const url = '/otu';
-  let otuDescArray = [];
-  Plotly.d3.json(url, (error, response) => {
-    if (error) return console.warn(error);
-    //loop through idList and subtract one to get the index
-    for (let i = 0; i < idList.length; i++) {
-      let index = idList[i] - 1;
-      let otuDesc = `${response[index]}`;
-      otuDescArray.push(otuDesc);
-    }
-  });
-  return otuDescArray;
-} 
+function InitDashboard() {
+    console.log('InitDashboard');
 
-//make the metadata display
-function showMetadata(sample) {
-  const url = `/metadata/${sample}`;
-  const metadataText = document.querySelector('#metadata-text');
-  Plotly.d3.json(url, (error, response) => {
-    if (error) return console.warn(error);
-    //initialize
-    metadataText.innerHTML = '';
-    //loop through the dictionary
-    for(let key in response) {
-      metadataText.innerHTML += `${key}: ${response[key]} <br>`;
-    }
-  });
-}
-    
-//make the pie chart
-function showPie(sample) {
-  const url = `/samples/${sample}`;
-  Plotly.d3.json(url, (error, response) => {
-    if (error) return console.warn(error);
-    
-    //get the top ten values and labels accounting for < 10
-    let samplesZeroes = response[0]['sample_values'].slice(0, 10);
-    let stop = 10;
-    if (samplesZeroes.indexOf(0) > 0) {
-      stop = samplesZeroes.indexOf(0);
-    }
-    let pieLabels = response[0]['otu_ids'].slice(0, stop);
-    let pieValues = samplesZeroes.slice(0, stop);
+    // Get a handle to the dropdown
+    let selector = d3.select('#selDataset');
 
-    //get the text labels
-    let pieText = otuDescriptions(pieLabels);
+    d3.json(url).then(data => {
+        console.log('Here is the data');
 
-    //set up the pie chart
-    let data = [{
-      values: pieValues,
-      labels: pieLabels,
-      hovertext: pieText,
-      hoverinfo: 'label+text+value+percent',
-      type: 'pie'
-    }];
-    let layout = {
-      height: 500,
-      width: 800,
-      title: `Top Sample Counts for ${sample}`
-    };
+        let sampleNames = data.names;
+        console.log('Here are the sample names:', sampleNames);
 
-    //plot it
-    Plotly.react('pie-chart', data, layout);
-  });
-}
+        // Populate the dropdown
+        for (let i = 0; i < sampleNames.length; i++) {
+            let sampleId = sampleNames[i];
+            selector.append('option').text(sampleId).property('value', sampleId);
+        };
 
-//make the bubble chart
-function showBubble(sample) {
-  const url = `/samples/${sample}`;
-  Plotly.d3.json(url, (error, response) => {
-    if (error) return console.warn(error);
+        // Read the current value from the dropdown
+        let initialId = selector.property('value');
+        console.log(`initialId = ${initialId}`);
 
-    //stop pulling when it hits 0
-    let samplesZeroes = response[0]['sample_values'];
-    let stop = samplesZeroes.indexOf(0);
-    let otuIDs = response[0]['otu_ids'].slice(0, stop);
-    //let textPull = otuDescriptions(otu_ids);
-    let sampleVals = samplesZeroes.slice(0, stop);
-    
-    //get the hover text
+        // Draw the bargraph for the selected sample id
+        DrawBargraph(initialId);
 
-    /** ~~For some reason, the below otuDescriptions call does 
-    return the correct array but won't work for the hover text 
-    (evaluation order?). So for now, I've just put the function 
-    in here, which of course defeats the purpose of having it in 
-    the first place. I'll research more to figure this out.~~ **/
-    //let bubbleText = otuDescriptions(otuIDs);
+        // Draw the bubblechart for the selected sample id
+        DrawBubblechart(initialId);
 
-    //hover text workaround
-    const otuURL = '/otu';
-    let otuDescArray = [];
-    Plotly.d3.json(otuURL, (error, response) => {
-      if (error) return console.warn(error);
-      //loop through idList and subtract one to get the index
-      for (let i = 0; i < otuIDs.length; i++) {
-        let index = otuIDs[i] - 1;
-        let otuDesc = `${response[index]}`;
-        otuDescArray.push(otuDesc);
-      }
-      
-      //set up the chart
-      let data = [{
-        x: otuIDs,
-        y: sampleVals,
-        //text: bubbleText,
-        text: otuDescArray,
-        mode: 'markers',
-        marker: {
-          color: otuIDs,
-          size: sampleVals,
-          colorscale: 'Portland'
-        },
-        type: 'scatter'
-      }];
-      let layout = {
-        height: 700,
-        width: 1200,
-        hovermode: 'closest',
-        title: `${sample} Sample Values`,
-        yaxis: {
-          title: 'Sample Value'
-        },
-        xaxis: {
-          title: 'OTU ID'
-        },
-      };
+        // Show the metadata for the selected sample id
+        ShowMetadata(initialId);
 
-      //plot it
-      Plotly.react('bubble-chart', data, layout);
     });
-  });
-}
-   
-//populate the select menu
-sampleNamesSelect();
 
-//initialize w/ the first sample
-optionChanged('BB_940');
+    
+
+
+}
+
+InitDashboard();
