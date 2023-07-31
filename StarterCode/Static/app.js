@@ -1,4 +1,4 @@
-// This code was largely inspired by Dom's HW14 Tutorial
+
 console.log('This is app.js');
 
 // Define a global variable to hold the URL
